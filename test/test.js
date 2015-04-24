@@ -478,6 +478,7 @@ test('whitespace - before and after text', function() {
         // wb & wa = whitespace before the text and inside the selection. Likewise for after.
         {wb: "", wa: ""},
 
+        // Insert whitespace at the start of the selection
         {wb: " "},
         {wb: "     "},
         {wb: "\t"},
@@ -486,6 +487,7 @@ test('whitespace - before and after text', function() {
         {wb: "\r\n"},
         {wb: "\r\n\r\n"},
 
+        // Insert whitespace at the end of the selection
         {wa: " " },
         {wa: "   "},
         {wa: "\t"},
@@ -495,18 +497,21 @@ test('whitespace - before and after text', function() {
         {wa: "\r\n"},
         {wa: "\r\n\r\n"},   
 
+        // Text before the selection, and whitespace at start of selection
         {tb: "hello", wb: " "},
         {tb: "hello", wb: "  "},
         {tb: "hello", wb: "\t"},
         {tb: "hello", wb: "\n"},
         {tb: "hello", wb: "\r\n"},
 
+        // Text after the selection, and whitespace and end of selection
         {wa: " ", ta: "good bye"},
         {wa: "   ", ta: "good bye"},
         {wa: "\t", ta: "good bye"},
         {wa: "\n", ta: "good bye"},
         {wa: "\r\n", ta: "good bye"},
 
+        // Text & whitespace, both before and after
         {tb: "hello", wb: " ",    wa: "\n", ta: "good bye"},
         {tb: "hello", wb: "  ",   wa: "   ", ta: "good bye"},
         {tb: "hello", wb: "\t",   wa: "\t",  ta: "good bye"},
