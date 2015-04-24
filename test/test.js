@@ -4,7 +4,7 @@ var $body = $('body');
 
 $body.prepend($('<h1/>').text('jQuery: ' + jQuery.prototype.jquery));
 
-$body.append('<input id="input" type="text" value="あいうえおかきくけこさしすせそ">');
+$body.append('<input id="input" type="text" value="あいうえお かきくけこ さしすせそ">');
 $body.append('<textarea id="textarea">あいうえお\nかきくけこさしすせそ\n<h1>たちつてと</h1></textarea>');
 
 var $input = $('#input');
@@ -461,6 +461,120 @@ test('insert(after) Test', function () {
     equal($target[0].value, str.substr(0, end) + insert + str.substr(end, str.length - end));
 });
 
+var targets = [$textarea, $input];
+test('whitespace - no change if no selection', function() {
+    expect(2);
+    targets.forEach(function($target) {
+        $target.selection('setPos', {start: 0, end: 0});
+        $target.selection('trim');
+
+        deepEqual($target.selection('getPos'), {start: 0, end: 0});
+    });
+});
+
+test('whitespace - trim whitespace', function() {
+    // where to add whitespace to the string
+    var whitespacePositions = ['start', 'end', 'both'];
+
+    // Whitespace to add before/after the text
+    var plainWhitespaces = [
+        ' ',
+        '    ',
+        '\t',
+        ' \t'
+    ];
+    var whitespacesWithNewlines = [
+        '\n',
+        '\n\n',
+        '  \n\n  '
+    ];
+
+    expect (
+        3 // number of assertions
+        *
+        whitespacePositions.length
+        * 
+        (
+            // tests on $input
+            plainWhitespaces.length 
+            +
+            // tests on $textarea
+            plainWhitespaces.length + whitespacesWithNewlines.length 
+        )
+    );
+
+    targets.forEach(function($target, targetIdx) {
+        var oldValue = $target.val();       
+
+        whitespacePositions.forEach(function(whitespacePosition) {
+            var addWhitespaceBefore = whitespacePosition === 'before' || whitespacePosition === 'both';
+            var addWhitespaceAfter  = whitespacePosition === 'after'  || whitespacePosition === 'both';
+
+            // Only use newlines in a textarea. The single-line input
+            // won't handle them.
+            var whitespaces;
+            if ($target.is('textarea')) {
+                // $.merge is destructive. So duplicate plainWhitespaces to avoid
+                // altering it.
+                whitespaces = $.merge([], plainWhitespaces);
+                whitespaces = $.merge(whitespaces, whitespacesWithNewlines);
+            }
+            else {
+                whitespaces = plainWhitespaces;
+            }
+
+            whitespaces.forEach(function(whitespace, whitespaceIdx) {
+                var str = "some text";
+                var startPosAfterTrim = addWhitespaceBefore ? whitespace.length : 0;
+                var endPosAfterTrim   = addWhitespaceAfter  ? str.length + whitespace.length : str.length;
+                if (addWhitespaceBefore) {
+                    str = whitespace + str;
+                }
+                if (addWhitespaceAfter) {
+                    str = str + whitespace;
+                }
+
+                $target.val(str);
+
+                $target.selection('setPos', {start: 0, end: str.length});
+                // Sanity check. Helps make sure that the control didn't eat our whitespace.
+                equal($target.selection('get'), str);
+
+                $target.selection('trim');
+
+                deepEqual($target.selection('getPos'), {start: startPosAfterTrim, end: endPosAfterTrim});
+                equal($target.selection('get'), "some text");
+            });
+        });
+
+        $target.val(oldValue);
+    });
+});
+
+test('whitespace - no change if no whitespace around selection', function() {
+    expect(6);
+    [$textarea, $input].forEach(function($target) {
+        var oldValue = $target.val();
+        var str = "1234567890";
+        // substr should be surronded by text that isn't whitespace.
+        var start = str.indexOf(4);
+        var end = str.indexOf(8) + 1;
+        var substr = str.substr(start, end - start);
+
+        $target.val(str);
+
+        $target.selection('setPos', {start: start, end: end});
+        equal($target.selection('get'), substr);
+
+        $target.selection('trim');
+
+        // Make sure nothing changed after the trim.
+        deepEqual($target.selection('getPos'), {start: start, end: end});
+        equal($target.selection('get'), "45678");
+
+        $target.val(oldValue);
+    });
+});
 
 module('$.selection');
 

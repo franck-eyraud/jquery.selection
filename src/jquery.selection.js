@@ -228,6 +228,31 @@
 
             $(element).scrollTop(pos);
             this.setPos(element, range, caret);
+        },
+
+        /**
+         * remove leading and trailing whitespace from the selected text
+         *
+         * @param   {Element}   element         target element
+         */
+        trim: function(element) {
+            var pos;
+            var startingWhitespaceLength, endingWhitespaceLength;
+            var regexResult;
+
+            // Trim whitespace from the head of the string
+            pos = _getCaretInfo(element);
+            regexResult = /^\s+/.exec(pos.text);
+            startingWhitespaceLength = (regexResult && regexResult[0]) ? regexResult[0].length : 0;
+            pos.start += startingWhitespaceLength;
+            _CaretOperation.setPos(element, pos, 'keep');
+
+            // Trim whitespace from the tail
+            pos = _getCaretInfo(element);
+            regexResult = /\s+$/.exec(pos.text);
+            endingWhitespaceLength = (regexResult && regexResult[0]) ? regexResult[0].length : 0;
+            pos.end -= endingWhitespaceLength;
+            _CaretOperation.setPos(element, pos, 'keep');
         }
     };
 
@@ -334,6 +359,11 @@
                         } else {
                             _CaretOperation.insertAfter(this, opts.text, opts.caret);
                         }
+                    });
+
+                case 'trim':
+                    return this.each(function() {
+                        _CaretOperation.trim(this);
                     });
 
                 /**
