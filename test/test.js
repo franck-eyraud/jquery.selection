@@ -472,84 +472,114 @@ test('whitespace - no change if no selection', function() {
     });
 });
 
-test('whitespace - trim whitespace', function() {
-    // where to add whitespace to the string
-    var whitespacePositions = ['start', 'end', 'both'];
+test('whitespace - before and after text', function() {
+    tests = [
+        // tb & ta = text before the selection, text after the selection
+        // wb & wa = whitespace before the text and inside the selection. Likewise for after.
+        {wb: "", wa: ""},
 
-    // Whitespace to add before/after the text
-    var plainWhitespaces = [
-        ' ',
-        '    ',
-        '\t',
-        ' \t'
-    ];
-    var whitespacesWithNewlines = [
-        '\n',
-        '\n\n',
-        '  \n\n  '
-    ];
+        {wb: " "},
+        {wb: "     "},
+        {wb: "\t"},
+        {wb: "\n"},
+        {wb: "\n\n"},
+        {wb: "\r\n"},
+        {wb: "\r\n\r\n"},
 
-    expect (
-        3 // number of assertions
-        *
-        whitespacePositions.length
-        * 
-        (
-            // tests on $input
-            plainWhitespaces.length 
-            +
-            // tests on $textarea
-            plainWhitespaces.length + whitespacesWithNewlines.length 
-        )
-    );
+        {wa: " " },
+        {wa: "   "},
+        {wa: "\t"},
+        {wa: " \t"},
+        {wa: "\n"},
+        {wa: "\n\n"},
+        {wa: "\r\n"},
+        {wa: "\r\n\r\n"},   
 
-    targets.forEach(function($target, targetIdx) {
-        var oldValue = $target.val();       
+        {tb: "hello", wb: " "},
+        {tb: "hello", wb: "  "},
+        {tb: "hello", wb: "\t"},
+        {tb: "hello", wb: "\n"},
+        {tb: "hello", wb: "\r\n"},
 
-        whitespacePositions.forEach(function(whitespacePosition) {
-            var addWhitespaceBefore = whitespacePosition === 'before' || whitespacePosition === 'both';
-            var addWhitespaceAfter  = whitespacePosition === 'after'  || whitespacePosition === 'both';
+        {wa: " ", ta: "good bye"},
+        {wa: "   ", ta: "good bye"},
+        {wa: "\t", ta: "good bye"},
+        {wa: "\n", ta: "good bye"},
+        {wa: "\r\n", ta: "good bye"},
 
-            // Only use newlines in a textarea. The single-line input
-            // won't handle them.
-            var whitespaces;
-            if ($target.is('textarea')) {
-                // $.merge is destructive. So duplicate plainWhitespaces to avoid
-                // altering it.
-                whitespaces = $.merge([], plainWhitespaces);
-                whitespaces = $.merge(whitespaces, whitespacesWithNewlines);
+        {tb: "hello", wb: " ",    wa: "\n", ta: "good bye"},
+        {tb: "hello", wb: "  ",   wa: "   ", ta: "good bye"},
+        {tb: "hello", wb: "\t",   wa: "\t",  ta: "good bye"},
+        {tb: "hello", wb: "\n",   wa: " ", ta: "good bye"},
+        {tb: "hello", wb: "\r\n", wa: "\r\n", ta: "good bye"},        
+    ].map(function(testCase) {
+        // Fill in missing values
+        return {
+            tb: testCase.tb || "",
+            wb: testCase.wb || "",
+            wa: testCase.wa || "",
+            ta: testCase.ta || "",
+        };
+    });
+
+    var quoteNewlines = function(str) {
+        return str
+            .replace("\n", "\\n")
+            .replace("\r", "\\r");
+    }
+    var isInternetExplorer = window.navigator.userAgent.toLowerCase().indexOf("msie") >= 0
+
+    if (isInternetExplorer) {
+        // @@@ Figure out how many tests would run on IE
+    }
+    else {
+        expect(120);
+    }
+
+    targets.forEach(function($target) {
+        var oldValue = $target.val();
+
+        tests.forEach(function(testCase) {
+            // Only test for Windows-style newlines on IE
+            var containsWindowsNewlines =            
+                /\r/.test(testCase.wb) || /\r/.test(testCase.wa);
+            if (containsWindowsNewlines && !isInternetExplorer) {
+                return;
             }
-            else {
-                whitespaces = plainWhitespaces;
+
+            // Only test for newlines if we're testing a textarea
+            var containsNewlines = containsWindowsNewlines ||
+                /\n/.test(testCase.wb) || /\n/.test(testCase.wa);
+            if (containsNewlines && !$target.is('textarea')) {
+                return;
             }
 
-            whitespaces.forEach(function(whitespace, whitespaceIdx) {
-                var str = "some text";
-                var startPosAfterTrim = addWhitespaceBefore ? whitespace.length : 0;
-                var endPosAfterTrim   = addWhitespaceAfter  ? str.length + whitespace.length : str.length;
-                if (addWhitespaceBefore) {
-                    str = whitespace + str;
-                }
-                if (addWhitespaceAfter) {
-                    str = str + whitespace;
-                }
+            var text = "some text";
+            var selectionStr = testCase.wb + text + testCase.wa;
+            var fullStr = testCase.tb + selectionStr + testCase.ta;
 
-                $target.val(str);
+            var startPosBeforeTrim = testCase.tb.length;
+            var startPosAfterTrim  = testCase.tb.length + testCase.wb.length;
 
-                $target.selection('setPos', {start: 0, end: str.length});
-                // Sanity check. Helps make sure that the control didn't eat our whitespace.
-                equal($target.selection('get'), str);
+            var endPosBeforeTrim = testCase.tb.length + selectionStr.length;
+            var endPosAfterTrim = endPosBeforeTrim - testCase.wa.length;
 
-                $target.selection('trim');
+            $target.val(fullStr);
 
-                deepEqual($target.selection('getPos'), {start: startPosAfterTrim, end: endPosAfterTrim});
-                equal($target.selection('get'), "some text");
-            });
+            $target.selection('setPos', {start: startPosBeforeTrim, end: endPosBeforeTrim});
+            // Sanity check. Helps make sure that the control didn't eat our whitespace.
+            equal($target.selection('get'), selectionStr, "'" + quoteNewlines(fullStr) + "'");
+
+            $target.selection('trim');
+
+            deepEqual($target.selection('getPos'), {start: startPosAfterTrim, end: endPosAfterTrim});
+            equal($target.selection('get'), text);        
         });
 
         $target.val(oldValue);
     });
 });
+
 
 test('whitespace - no change if no whitespace around selection', function() {
     expect(6);
