@@ -472,7 +472,7 @@ test('whitespace - no change if no selection', function() {
     });
 });
 
-test('whitespace - before and after text', function() {
+test('trim - remove whitespace before and after text', function() {
     tests = [
         // tb & ta = text before the selection, text after the selection
         // wb & wa = whitespace before the text and inside the selection. Likewise for after.
@@ -586,9 +586,9 @@ test('whitespace - before and after text', function() {
 });
 
 
-test('whitespace - no change if no whitespace around selection', function() {
+test('trim - no change if no whitespace around selection', function() {
     expect(6);
-    [$textarea, $input].forEach(function($target) {
+    targets.forEach(function($target) {
         var oldValue = $target.val();
         var str = "1234567890";
         // substr should be surronded by text that isn't whitespace.
@@ -606,6 +606,48 @@ test('whitespace - no change if no whitespace around selection', function() {
         // Make sure nothing changed after the trim.
         deepEqual($target.selection('getPos'), {start: start, end: end});
         equal($target.selection('get'), "45678");
+
+        $target.val(oldValue);
+    });
+});
+
+test('trim - only whitespace', function() {
+    expect(3 * targets.length);
+    targets.forEach(function($target) {
+        var oldValue = $target.val();
+
+        var str = "     ";
+        $target.val(str);
+
+        $target.selection('setPos', {start: 0, end: str.length});
+        equal($target.selection('get'), str);
+
+        $target.selection('trim');
+
+        equal($target.selection('get'), "");
+        
+        var pos = $target.selection('getPos');
+        equal(pos.start, pos.end);
+
+        $target.val(oldValue);
+    });
+});
+
+test('trim - no-op for 0 length selection', function() {
+    var str = "AB C";
+    expect(2 * (str.length + 1) * targets.length);
+    targets.forEach(function($target) {
+        var oldValue = $target.val();
+        $target.val(str);
+
+        for (var idx = 0; idx <= str.length; idx++) {
+            $target.selection('setPos', { start: idx, end: idx});
+            equal($target.selection('get'), "");
+
+            $target.selection('trim');
+
+            deepEqual($target.selection('getPos'), { start: idx, end: idx});
+        }
 
         $target.val(oldValue);
     });
