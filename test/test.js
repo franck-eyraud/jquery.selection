@@ -653,6 +653,65 @@ test('trim - no-op for 0 length selection', function() {
     });
 });
 
+test('replace regexp - whole string', function() {
+    var before = "FLY";
+    var after  = "FLEA";
+    expect(3 * targets.length);
+    targets.forEach(function($target) {
+        var oldValue = $target.val();
+        $target.val(before);
+
+        $target.selection('setPos', { start: 0, end: before.length });
+        deepEqual($target.selection('getPos'), { start: 0, end: before.length});
+        equal($target.selection('get'), before);
+
+        $target.selection('replaceRegexp', {find: /Y/, replace: 'EA'});
+        equal($target.selection('get'), after);
+
+        $target.val(oldValue);
+    });
+});
+
+test('replace regexp - partial string', function() {
+    var before = "AABBCC";
+    var after  = "AAZZZZCC";
+    expect(3 * targets.length);
+    targets.forEach(function($target) {
+        var oldValue = $target.val();
+        $target.val(before);
+
+        $target.selection('setPos', { start: 2, end: 4 });
+        equal($target.selection('get'), 'BB');
+
+        $target.selection('replaceRegexp', {find: /./g, replace: 'ZZ'});
+        equal($target.selection('get'), 'ZZZZ');
+
+        equal($target.val(), after);
+
+        $target.val(oldValue);
+    });
+});
+
+test('replace regexp - empty selection', function() {
+    var str = "AABBCC";
+
+    expect(3 * targets.length);
+    targets.forEach(function($target) {
+        var oldValue = $target.val();
+        $target.val(str);
+
+        $target.selection('setPos', { start: 3, end: 3 });
+        equal($target.selection('get'), '');
+
+        $target.selection('replaceRegexp', {find: /./g, replace: 'ZZ'});
+        equal($target.selection('get'), '');
+
+        equal($target.val(), str);
+
+        $target.val(oldValue);
+    });    
+});
+
 // TODO: I'm not sure what exactly this was supposed to test.
 // But the original test was (a) causing errors on Safari and Chrome, and
 // (b) using the jQuery .select() function incorrectly (it should take an

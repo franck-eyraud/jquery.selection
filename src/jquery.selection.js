@@ -187,9 +187,17 @@
                 range = {start: tmp.start, end: tmp.start + text.length};
 
             element.value = orig.substr(0, tmp.start) + text + orig.substr(tmp.end);
-
             $(element).scrollTop(pos);
             this.setPos(element, range, caret);
+        },
+
+
+        replaceRegexp: function(element, find, replace, caret) {            
+            var tmp = _getCaretInfo(element);
+            var originalText = tmp.text;
+            var newText = originalText.replace(find, replace);
+
+            this.replace(element, newText, caret);
         },
 
         /**
@@ -342,6 +350,12 @@
                 case 'replace':
                     return this.each(function() {
                         _CaretOperation.replace(this, opts.text, opts.caret);
+                    });
+
+
+                case 'replaceRegexp':
+                    return this.each(function() {
+                        _CaretOperation.replaceRegexp(this, opts.find, opts.replace, opts.caret);
                     });
 
                 /**
