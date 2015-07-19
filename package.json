@@ -1,6 +1,6 @@
 {
   "name": "jquery.selection",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "selection text/caret operation - jQuery pulgin | 選択範囲のテキスト操作 / キャレット操作",
   "main": "src/jquery.selection.js",
   "directories": {
